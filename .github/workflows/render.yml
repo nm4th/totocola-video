@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       composition:
-        description: "Composition HTML path"
+        description: "Composition project directory"
         required: false
-        default: "compositions/main.html"
+        default: "compositions/main"
 
 jobs:
   render:
@@ -42,9 +42,15 @@ jobs:
             npm install
           fi
 
+      - name: Hyperframes CLI diagnostics
+        run: |
+          npx --yes hyperframes@latest --version || true
+          npx --yes hyperframes@latest --help || true
+          npx --yes hyperframes@latest render --help || true
+
       - name: Render MP4
         env:
-          COMPOSITION: ${{ github.event.inputs.composition || 'compositions/main.html' }}
+          COMPOSITION: ${{ github.event.inputs.composition || 'compositions/main' }}
         run: |
           mkdir -p output
           npx --yes hyperframes@latest render "$COMPOSITION" --output output/main.mp4
