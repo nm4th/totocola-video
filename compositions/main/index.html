@@ -22,16 +22,32 @@
         overflow: hidden;
       }
 
+      /*
+       * Instagram Reels / Stories: 1080 x 1920 (9:16), 30fps.
+       * UI safe area (avoid placing critical text/logos here):
+       *   top   ≤ 220px : profile / sound icon
+       *   bottom ≥ 1380px : caption + like/share/comment buttons
+       *   right ≥ 880px (i.e. last 200px) : action rail
+       * The .safe wrapper below keeps content inside ~50–880 / 240–1380.
+       */
+
       #root {
         position: relative;
-        width: 1920px;
-        height: 1080px;
-        background: radial-gradient(
-          circle at 30% 30%,
-          #1f3a8a 0%,
-          #0b0d12 70%
-        );
+        width: 1080px;
+        height: 1920px;
+        background:
+          radial-gradient(circle at 50% 28%, #1f3a8a 0%, transparent 55%),
+          radial-gradient(circle at 50% 92%, #4ade80 0%, transparent 60%),
+          #0b0d12;
         overflow: hidden;
+      }
+
+      .safe {
+        position: absolute;
+        left: 50px;
+        right: 200px;
+        top: 240px;
+        bottom: 540px;
       }
 
       .clip {
@@ -44,7 +60,7 @@
       @keyframes fade-up {
         from {
           opacity: 0;
-          transform: translateY(40px);
+          transform: translateY(48px);
         }
         to {
           opacity: 1;
@@ -58,62 +74,83 @@
         }
       }
 
-      .title {
-        top: 420px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        font-size: 132px;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        animation:
-          fade-up 0.8s forwards,
-          fade-out 0.6s forwards 4.2s;
-      }
-
-      .subtitle {
-        top: 600px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        font-size: 48px;
-        font-weight: 400;
-        color: #9aa7c2;
-        animation:
-          fade-up 0.8s forwards 0.4s,
-          fade-out 0.6s forwards 4.2s;
-      }
-
-      .logo {
-        top: 760px;
+      .eyebrow {
+        top: 0;
         left: 0;
         right: 0;
         text-align: center;
         font-size: 36px;
+        font-weight: 700;
+        letter-spacing: 0.5em;
+        color: #4ade80;
+        animation: fade-up 0.8s forwards;
+      }
+
+      .title {
+        top: 220px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 148px;
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: 0.02em;
+        animation:
+          fade-up 0.9s forwards 0.2s,
+          fade-out 0.6s forwards 4.2s;
+      }
+
+      .subtitle {
+        top: 640px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 52px;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #cdd6e3;
+        animation:
+          fade-up 0.9s forwards 0.6s,
+          fade-out 0.6s forwards 4.2s;
+      }
+
+      .logo {
+        bottom: 40px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 32px;
         color: #4ade80;
         letter-spacing: 0.4em;
-        animation: fade-up 0.8s forwards 1s;
+        animation: fade-up 0.8s forwards 1.1s;
       }
     </style>
   </head>
   <body>
     <div
       id="root"
-      data-composition-id="totocola-intro"
-      data-width="1920"
-      data-height="1080"
+      data-composition-id="totocola-reels-intro"
+      data-width="1080"
+      data-height="1920"
       data-fps="30"
       data-duration="5"
     >
-      <h1 class="clip title" data-start="0" data-duration="5" data-track-index="0">
-        トトコラ動画
-      </h1>
-      <p class="clip subtitle" data-start="0.4" data-duration="4.6" data-track-index="1">
-        HeyGen HyperFrames で動画をコードから生成する
-      </p>
-      <p class="clip logo" data-start="1" data-duration="4" data-track-index="2">
-        ▍ HYPERFRAMES
-      </p>
+      <div class="safe">
+        <p class="clip eyebrow" data-start="0" data-duration="5" data-track-index="0">
+          REELS
+        </p>
+        <h1 class="clip title" data-start="0.2" data-duration="4.8" data-track-index="1">
+          トトコラ動画
+        </h1>
+        <p class="clip subtitle" data-start="0.6" data-duration="4.4" data-track-index="2">
+          コードで作る
+          <br />
+          Instagram 用ショート動画
+        </p>
+        <p class="clip logo" data-start="1.1" data-duration="3.9" data-track-index="3">
+          ▍ HYPERFRAMES
+        </p>
+      </div>
     </div>
   </body>
 </html>
