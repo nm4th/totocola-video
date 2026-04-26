@@ -1,0 +1,61 @@
+name: render
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "compositions/**"
+      - "assets/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/render.yml"
+  workflow_dispatch:
+    inputs:
+      composition:
+        description: "Composition HTML path"
+        required: false
+        default: "compositions/main.html"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version | head -1
+
+      - name: Install npm deps
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Render MP4
+        env:
+          COMPOSITION: ${{ github.event.inputs.composition || 'compositions/main.html' }}
+        run: |
+          mkdir -p output
+          npx --yes hyperframes@latest render "$COMPOSITION" --output output/main.mp4
+
+      - name: Show output info
+        run: ls -lah output/ && file output/main.mp4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rendered-video-${{ github.sha }}
+          path: output/main.mp4
+          if-no-files-found: error
+          retention-days: 30
