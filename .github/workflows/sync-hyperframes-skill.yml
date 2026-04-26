@@ -1,0 +1,103 @@
+name: sync-hyperframes-skill
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Upstream ref (branch, tag, or SHA)"
+        required: false
+        default: "main"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_REPO: heygen-com/hyperframes
+  UPSTREAM_REF: ${{ github.event.inputs.ref || 'main' }}
+  TARGET_DIR: .claude/skills
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sparse checkout upstream skills/
+        run: |
+          rm -rf /tmp/upstream
+          git clone --depth 1 --filter=blob:none --sparse \
+            "https://github.com/${UPSTREAM_REPO}.git" /tmp/upstream
+          cd /tmp/upstream
+          git fetch --depth 1 origin "$UPSTREAM_REF"
+          git checkout FETCH_HEAD
+          git sparse-checkout set skills
+
+      - name: Record upstream metadata
+        id: upstream
+        run: |
+          cd /tmp/upstream
+          SHA=$(git rev-parse HEAD)
+          SHORT=$(git rev-parse --short HEAD)
+          DATE=$(git log -1 --format=%cI)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Mirror skills/ into ${{ env.TARGET_DIR }}
+        run: |
+          mkdir -p "${TARGET_DIR}"
+          # Preserve the .gitkeep marker but replace everything else.
+          find "${TARGET_DIR}" -mindepth 1 -not -name '.gitkeep' -delete
+          if [ -d /tmp/upstream/skills ]; then
+            rsync -a /tmp/upstream/skills/ "${TARGET_DIR}/"
+          else
+            echo "::error::upstream skills/ directory not found at ref ${UPSTREAM_REF}"
+            exit 1
+          fi
+          cat > "${TARGET_DIR}/.upstream.json" <<JSON
+          {
+            "repo": "${UPSTREAM_REPO}",
+            "ref": "${UPSTREAM_REF}",
+            "sha": "${{ steps.upstream.outputs.sha }}",
+            "synced_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          JSON
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- "${TARGET_DIR}"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR with sync
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/sync-hyperframes-skill
+          base: ${{ github.ref_name }}
+          commit-message: "chore: sync HyperFrames skill @ ${{ steps.upstream.outputs.short }}"
+          title: "chore: sync HyperFrames skill @ ${{ steps.upstream.outputs.short }}"
+          body: |
+            Automated sync of `${{ env.TARGET_DIR }}` from
+            [`${{ env.UPSTREAM_REPO }}`](https://github.com/${{ env.UPSTREAM_REPO }})
+            at ref `${{ env.UPSTREAM_REF }}` (commit
+            [`${{ steps.upstream.outputs.short }}`](https://github.com/${{ env.UPSTREAM_REPO }}/commit/${{ steps.upstream.outputs.sha }}),
+            authored ${{ steps.upstream.outputs.date }}).
+
+            Triggered by `${{ github.event_name }}`. Review the diff before merging.
+          labels: |
+            skill-sync
+            automated
+          delete-branch: true
+
+      - name: No-op summary
+        if: steps.diff.outputs.changed == 'false'
+        run: echo "Already up to date with ${UPSTREAM_REPO}@${{ steps.upstream.outputs.short }}"
