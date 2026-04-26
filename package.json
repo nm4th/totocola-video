@@ -1,0 +1,15 @@
+{
+  "name": "totocola-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HeyGen HyperFrames で動画を作成するプロジェクト",
+  "scripts": {
+    "preview": "npx hyperframes@latest preview compositions/main.html",
+    "render": "npx hyperframes@latest render compositions/main.html --output output/main.mp4",
+    "render:webm": "npx hyperframes@latest render compositions/main.html --output output/main.webm",
+    "lint": "npx hyperframes@latest lint compositions/main.html"
+  },
+  "devDependencies": {
+    "hyperframes": "latest"
+  }
+}
